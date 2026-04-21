@@ -15,7 +15,7 @@ class BookingController extends Controller
      */
     public function index()
     {
-        $bookings = Booking::with('villa')->latest()->get();
+        $bookings = Booking::with('villa')->orderBy('start_date', 'desc')->get();
 
         return response()->json([
             'success' => true,
@@ -42,53 +42,34 @@ class BookingController extends Controller
     /**
      * Admin: Manually block a range of years
      */
-    public function block(Request $request)
+    public function block(Request $request) 
     {
-        $validated = $request->validate([
+        $request->validate([
             'villa_id' => 'required|exists:villas,id',
-            'start_year' => 'required|integer|min:2024|max:2100',
-            'end_year' => 'required|integer|after_or_equal:start_year|max:2100',
+            'start_year' => 'required|integer',
+            'end_year' => 'required|integer|gte:start_year',
             'note' => 'nullable|string'
         ]);
 
-        // Create a booking for the full range: Jan 1 [Start] to Dec 31 [End]
-        $startDate = $validated['start_year'] . '-01-01';
-        $endDate = $validated['end_year'] . '-12-31';
+        // Konversi Tahun dari FE ke format Date (YYYY-MM-DD)
+        $startDate = $request->start_year . '-01-01';
+        $endDate = $request->end_year . '-12-31';
 
-        // Check if overlaps with existing confirmed bookings
-        $exists = Booking::where('villa_id', $validated['villa_id'])
-            ->where('status', 'confirmed')
-            ->where(function($query) use ($startDate, $endDate) {
-                $query->where(function($q) use ($startDate, $endDate) {
-                    $q->where('start_date', '<=', $endDate)
-                      ->where('end_date', '>=', $startDate);
-                });
-            })->exists();
-
-        if ($exists) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Rentang tahun tersebut sudah terisi atau memiliki jadwal yang bentrok.'
-            ], 422);
-        }
-
+        // Insert ke tabel bookings
         $booking = Booking::create([
-            'villa_id' => $validated['villa_id'],
-            'customer_name' => 'ADMIN BLOCK',
-            'customer_email' => 'admin@nara.com',
+            'villa_id' => $request->villa_id,
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'total_price' => 0,
-            'status' => 'confirmed',
-            'note' => $validated['note'] ?? 'Manual block for ' . ($validated['start_year'] == $validated['end_year'] ? $validated['start_year'] : $validated['start_year'] . '-' . $validated['end_year'])
+            'customer_name' => 'Admin System', // Menandakan ini blokir manual
+            'note' => $request->note,
+            'status' => 'confirmed'
         ]);
 
-        // Hapus cache katalog agar status ketersediaan langsung terupdate
-        Cache::forget('villas_catalog');
+        // Relasi villa->syncStatus() sudah otomatis berjalan lewat Model Observer di atas
 
         return response()->json([
             'success' => true,
-            'message' => 'Tahun berhasil diblokir di database!',
+            'message' => 'Rentang tahun berhasil diblokir dan status properti diperbarui!',
             'data' => $booking
         ]);
     }

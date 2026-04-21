@@ -6,26 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+  public function up(): void
     {
         Schema::create('villas', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description');
-            $table->decimal('price_per_night', 15, 2);
-            $table->integer('max_guests');
+            $table->text('description')->nullable(); 
+            $table->string('location')->nullable();
+            $table->decimal('price_per_year', 15, 2); 
+            $table->integer('max_guests')->default(1);
+            
+            // 3 Status ketersediaan
+            $table->enum('status', ['available', 'fullbooked', 'partially_booked'])->default('available');
+            
             $table->timestamps();
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
+    
     public function down(): void
     {
         Schema::dropIfExists('villas');
-    }
-};
+    }};

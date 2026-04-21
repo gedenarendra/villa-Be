@@ -12,33 +12,10 @@ class VillaController extends Controller
     /**
      * Menampilkan semua daftar villa (Katalog)
      */
-    public function index()
+  public function index()
     {
-        $today = now()->toDateString();
-        $currentYear = now()->year;
-
-        // Cache data selama 60 menit untuk performa maksimal
-        $villas = Cache::remember('villas_catalog', 3600, function () use ($today, $currentYear) {
-            return Villa::with(['images', 'bookings' => function($query) use ($today) {
-                $query->where('status', 'confirmed')
-                      ->where('end_date', '>=', $today);
-            }])->get()->map(function($villa) use ($today, $currentYear) {
-                // Ambil status granular (available, limited, fully booked)
-                $granularStatus = $villa->getAvailabilityStatus();
-                
-                // Tambahkan properti dinamis untuk frontend
-                $villa->current_availability = $granularStatus;
-                
-                // Jika tidak 'available', tampilkan kapan ketersediaan berikutnya
-                if ($granularStatus !== 'available') {
-                    $villa->next_available_year = $villa->getNextAvailableYear();
-                }
-                
-                unset($villa->bookings);
-                return $villa;
-            })->toArray();
-        });
-
+        // Eager load images agar FE tidak error saat memanggil villa.images[0]
+        $villas = Villa::with('images')->get();
         return response()->json([
             'success' => true,
             'data' => $villas
@@ -50,25 +27,10 @@ class VillaController extends Controller
      */
     public function show($id)
     {
-        $today = now()->toDateString();
         $villa = Villa::with('images')->find($id);
-        
         if (!$villa) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Villa tidak ditemukan'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Villa not found'], 404);
         }
-
-        // Cek status granular (Single Source of Truth)
-        $granularStatus = $villa->getAvailabilityStatus();
-
-        $villa->current_availability = $granularStatus;
-        
-        if ($granularStatus !== 'available') {
-            $villa->next_available_year = $villa->getNextAvailableYear();
-        }
-
         return response()->json([
             'success' => true,
             'data' => $villa
@@ -83,7 +45,7 @@ class VillaController extends Controller
             'description' => 'required|string',
             'price_per_year' => 'required|numeric',
             'max_guests' => 'required|integer',
-            'status' => 'nullable|in:available,not available',
+            'status' => 'nullable|in:available,fullbooked,partially_booked',
             'location' => 'required|string|max:255',
             'image_url' => 'required|url', // Untuk tahap awal, kita kirim URL gambar dulu
         ]);
@@ -124,7 +86,7 @@ class VillaController extends Controller
             'description' => 'sometimes|string',
             'price_per_year' => 'sometimes|numeric',
             'max_guests' => 'sometimes|integer',
-            'status' => 'sometimes|in:available,not available',
+            'status' => 'nullable|in:available,fullbooked,partially_booked',
             'location' => 'sometimes|string|max:255',
         ]);
 

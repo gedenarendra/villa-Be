@@ -33,7 +33,7 @@ class VillaSeeder extends Seeder
                 'description' => 'Exclusive estate perched on a cliff with 270-degree ocean views.',
                 'price_per_year' => 2200000000,
                 'max_guests' => 12,
-                'status' => 'not available',
+                'status' => 'available',
                 'location' => 'Canggu, Bali',
                 'image' => 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1000'
             ]

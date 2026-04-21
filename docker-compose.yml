@@ -1,0 +1,58 @@
+services:
+  # Service untuk aplikasi Laravel (PHP-FPM)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: villa-backend-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+    networks:
+      - villa-network
+    depends_on:
+      - db
+
+  # Service untuk Database (PostgreSQL Lokal)
+  db:
+    image: postgres:alpine
+    container_name: villa-backend-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432" # Port 5433 di host agar tidak bentrok jika ada Postgres lain
+    volumes:
+      - db_data:/var/lib/postgresql/18/docker
+    networks:
+      - villa-network
+
+  # Service untuk Web Server (Nginx)
+  webserver:
+    image: nginx:alpine
+    container_name: villa-backend-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - villa-network
+    depends_on:
+      - app
+
+networks:
+  villa-network:
+    driver: bridge
+
+volumes:
+  db_data:

@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('villas', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->text('description');
+            $table->decimal('price_per_night', 15, 2);
+            $table->integer('max_guests');
             $table->timestamps();
         });
     }

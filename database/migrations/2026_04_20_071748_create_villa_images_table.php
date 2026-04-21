@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('villa_images', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('villa_id')->constrained()->onDelete('cascade');
+            $table->string('image_url');
+            $table->boolean('is_primary')->default(false);
             $table->timestamps();
         });
     }

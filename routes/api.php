@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\VillaController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BookingController;
 
 // ==========================================
 // AREA PUBLIK (Tidak butuh token)
@@ -11,8 +12,12 @@ use App\Http\Controllers\Api\AuthController;
 // 1. Tamu melihat katalog villa
 Route::get('/villas', [VillaController::class, 'index']);
 
-// 2. Admin melakukan login
-Route::post('/login', [AuthController::class, 'login']);
+// Rute untuk detail villa (saat diklik)
+Route::get('/villas/{id}', [VillaController::class, 'show']);
+Route::get('/villas/{id}/availability', [BookingController::class, 'availability']);
+
+// 2. Admin melakukan login (rate limited untuk mencegah brute-force)
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
 
 // ==========================================
@@ -27,13 +32,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/profile', function (Request $request) {
         return $request->user();
     });
-
-    // Nanti, fungsi seperti tambah/edit/hapus villa ditaruh di dalam area ini.
-    // Contoh (jangan di-uncomment dulu karena fungsinya belum dibuat):
-    // Route::post('/villas', [VillaController::class, 'store']);
-    // Route::put('/villas/{id}', [VillaController::class, 'update']);
-    // Route::delete('/villas/{id}', [VillaController::class, 'destroy']);
     
+    // 3. CRUD Villa
+    Route::post('/villas', [VillaController::class, 'store']);      // Tambah Villa
+    Route::put('/villas/{id}', [VillaController::class, 'update']);   // Edit Villa
+    Route::delete('/villas/{id}', [VillaController::class, 'destroy']); // Hapus Villa
+
+    // 4. Manajemen Booking & Blokir Kalender
+    Route::get('/bookings', [BookingController::class, 'index']);
+    Route::post('/bookings/block', [BookingController::class, 'block']);
 });
 
 // Endpoint sederhana untuk memastikan server tetap aktif

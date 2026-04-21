@@ -4,20 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\LoginRequest;
 use App\Models\Admin;
 use Illuminate\Support\Facades\Hash;
 
+use App\Http\Resources\AdminResource;
 class AuthController extends Controller
 {
     // Fungsi Login
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        // 1. Validasi input dari React
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
-
         // 2. Cari admin berdasarkan email
         $admin = Admin::where('email', $request->email)->first();
 
@@ -29,13 +25,13 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // 4. Buat Token Akses
-        $token = $admin->createToken('admin-token')->plainTextToken;
+        // 4. Buat Token Akses dengan ability khusus
+        $token = $admin->createToken('admin-token', ['admin'])->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil.',
-            'admin' => $admin,
+            'admin' => new AdminResource($admin),
             'token' => $token
         ], 200);
     }
@@ -43,8 +39,8 @@ class AuthController extends Controller
     // Fungsi Logout
     public function logout(Request $request)
     {
-        // Hapus token yang sedang digunakan
-        $request->user()->currentAccessToken()->delete();
+        // Hapus token yang sedang digunakan (null-safe)
+        optional($request->user()->currentAccessToken())->delete();
 
         return response()->json([
             'success' => true,

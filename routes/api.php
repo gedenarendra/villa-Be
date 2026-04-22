@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/villas', [VillaController::class, 'store']);      // Tambah Villa
     Route::patch('/villas/{id}', [VillaController::class, 'update']);   // Edit Villa
     Route::delete('/villas/{id}', [VillaController::class, 'destroy']); // Hapus Villa
+    Route::post('/system/hard-reset', [VillaController::class, 'hardReset']);
 
     // 4. Manajemen Booking & Blokir Kalender
     Route::get('/bookings', [BookingController::class, 'index']);

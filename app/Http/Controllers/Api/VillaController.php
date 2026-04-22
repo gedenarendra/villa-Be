@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Villa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use App\Models\Booking;
+use App\Models\VillaImage;
 
 class VillaController extends Controller
 {
@@ -124,5 +127,36 @@ class VillaController extends Controller
             'success' => true,
             'message' => 'Villa berhasil dihapus'
         ]);
+    }
+
+    /**
+     * Hard Reset: Menghapus semua data villa, gambar, dan booking
+     */
+    public function hardReset()
+    {
+        try {
+            DB::beginTransaction();
+
+            // Hapus data secara berurutan untuk menghindari constraint error
+            Booking::query()->delete();
+            VillaImage::query()->delete();
+            Villa::query()->delete();
+
+            DB::commit();
+
+            // Hapus cache
+            Cache::forget('villas_catalog');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Seluruh data berhasil dihapus total'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mereset data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

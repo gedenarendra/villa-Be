@@ -15,10 +15,13 @@ class VillaController extends Controller
     /**
      * Menampilkan semua daftar villa (Katalog)
      */
-  public function index()
+    public function index()
     {
-        // Eager load images agar FE tidak error saat memanggil villa.images[0]
-        $villas = Villa::with('images')->get();
+        $villas = Cache::remember('villas_catalog', 3600, function () {
+            // Mengubah ke array agar lebih aman saat di-cache (menghindari __PHP_Incomplete_Class)
+            return Villa::with('images')->get()->toArray();
+        });
+
         return response()->json([
             'success' => true,
             'data' => $villas

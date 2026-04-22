@@ -43,7 +43,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::post('/bookings/block', [BookingController::class, 'block']);
 
-
+    // Tambahkan route berikut untuk Edit dan Delete
+    Route::put('/bookings/{id}', [BookingController::class, 'update']);
+    Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
 });
 
 // Endpoint sederhana untuk memastikan server tetap aktif

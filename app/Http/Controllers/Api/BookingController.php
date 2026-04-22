@@ -73,4 +73,50 @@ class BookingController extends Controller
             'data' => $booking
         ]);
     }
+
+    public function update(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        $request->validate([
+            'start_year' => 'required|integer',
+            'end_year' => 'required|integer|gte:start_year',
+            'note' => 'nullable|string'
+        ]);
+
+        // Konversi Tahun dari FE ke format Date (YYYY-MM-DD)
+        $startDate = $request->start_year . '-01-01';
+        $endDate = $request->end_year . '-12-31';
+
+        // Update data booking
+        // Event "updated" pada Model Booking akan otomatis terpanggil
+        $booking->update([
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'note' => $request->note,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data blokir tahun berhasil diperbarui!',
+            'data' => $booking
+        ]);
+    }
+
+    /**
+     * Admin: Hapus blokir kalender
+     */
+    public function destroy($id)
+    {
+        $booking = Booking::findOrFail($id);
+        
+        // Hapus data booking
+        // Event "deleted" pada Model Booking akan otomatis terpanggil
+        $booking->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Blokir kalender berhasil dihapus, status villa telah diperbarui!'
+        ]);
+    }
 }

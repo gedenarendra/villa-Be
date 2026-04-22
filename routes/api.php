@@ -35,12 +35,14 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // 3. CRUD Villa
     Route::post('/villas', [VillaController::class, 'store']);      // Tambah Villa
-    Route::put('/villas/{id}', [VillaController::class, 'update']);   // Edit Villa
+    Route::patch('/villas/{id}', [VillaController::class, 'update']);   // Edit Villa
     Route::delete('/villas/{id}', [VillaController::class, 'destroy']); // Hapus Villa
 
     // 4. Manajemen Booking & Blokir Kalender
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::post('/bookings/block', [BookingController::class, 'block']);
+
+
 });
 
 // Endpoint sederhana untuk memastikan server tetap aktif

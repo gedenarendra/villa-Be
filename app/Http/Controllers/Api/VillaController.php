@@ -79,26 +79,34 @@ class VillaController extends Controller
     public function update(Request $request, $id)
     {
         $villa = Villa::find($id);
-        if (!$villa) return response()->json(['message' => 'Not Found'], 404);
+        
+        // Format error disamakan dengan format success agar seragam di sisi FE
+        if (!$villa) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Villa not found'
+            ], 404);
+        }
 
+        // Aturan 'sometimes|required' sangat cocok untuk method PATCH
         $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'price_per_year' => 'sometimes|numeric',
-            'max_guests' => 'sometimes|integer',
-            'status' => 'nullable|in:available,fullbooked,partially_booked',
-            'location' => 'sometimes|string|max:255',
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'price_per_year' => 'sometimes|required|numeric',
+            'max_guests' => 'sometimes|required|integer',
+            'status' => 'sometimes|nullable|in:available,fullbooked,partially_booked',
+            'location' => 'sometimes|required|string|max:255',
         ]);
 
         $villa->update($validated);
 
-        // Hapus cache
+        // Hapus cache agar katalog langsung menampilkan data terbaru
         Cache::forget('villas_catalog');
 
         return response()->json([
             'success' => true,
             'message' => 'Villa berhasil diperbarui',
-            'data' => $villa
+            'data' => $villa->load('images') // Load images agar FE tidak error jika merender ulang komponen
         ]);
     }
 
